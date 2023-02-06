@@ -21,7 +21,7 @@ ExtractTensorFirstOrder\[Delta]::usage="If tensor is a sum of terms with tensors
 
 Begin["`Private`"]
 
-subMatrixPowerToDot = MatrixPower[a_,n_]:>Dot@@Table[a,n] /;n>0 ;
+subMatrixPowerToDot = MatrixPower[A_,n_]:> Dot@@Table[A,n]/;(n>0 &&n\[Element]Integers);
 
 subDisplay ={ 
    Transpose[MatrixPower[A_,-1],{2,1}]:> 
@@ -56,7 +56,7 @@ Characteristic[F_,\[Lambda]_]:= \[Lambda]^3-Distribute[Tr[F]]\[Lambda]^2 +\[Lamb
 InverseFromCayley[F_]:=
 (Cayley[F] . MatrixPower[F,-1]/Det[F] +MatrixPower[F,-1] //TensorExpand) ;
 
-subDetExpand= {Det[A_+B_]:>( Det[A] +  Det[A] Distribute@Tr[InverseFromCayley[A] . B//TensorExpand ] +  Det[B]Distribute@Tr[InverseFromCayley[B] . A//TensorExpand] + Det[B]  //TensorExpand)};
+subDetExpand= {Det[A_+B_]:>( Det[A] +  Det[A] Distribute@Tr[InverseFromCayley[A] . B//TensorExpand ] +  Det[B]Distribute@Tr[InverseFromCayley[B] . A//TensorExpand] + Det[B]  //TensorExpand)/.subMatrixPowerToDot};
 
 (*subTensorProductExpand= { TensorContract[n_\[TensorProduct]TensorContract[m_,list1_]\[TensorProduct]p_,list2_] :> TensorContract[n\[TensorProduct]m\[TensorProduct]p,
           Sort[Join[ list1+TensorRank[n],Map[Complement[ Range[TensorRank[n\[TensorProduct]m\[TensorProduct]p]],Flatten[list1+TensorRank[n]] ][[#]] &,list2]]]
@@ -147,14 +147,13 @@ NotTensorQ[A_]:=If[AssumeNotTensor,
  tensor//.subTensorExpand
 );
 
-subPowerToDot = MatrixPower[A_,n_]:> Dot@@Table[A,n]/;(n>0 &&n\[Element]Integers);
 subExpandDetTensor[term_,\[Delta]_] := term/.{Det[Plus[n__]+ \[Delta]]:>Det[Plus[n]] +Det[Plus[n]]Tr[MatrixPower[Plus[n],-1] . \[Delta]]};
 
 subExpandInverseTensor[term_,\[Delta]_] := term/.{MatrixPower[Plus[n__]+ \[Delta],-1]:>MatrixPower[Plus[n],-1] - MatrixPower[Plus[n],-1] . \[Delta] . MatrixPower[Plus[n],-1]};
 
 (*This function returns the derivative of the tensor in relation to \[Delta].*)
 ExpandTensor\[Delta][tensor_,\[Delta]_] := Module[{Expandedtensor = tensor},
-	Expandedtensor=(Expandedtensor/.subPowerToDot//TensorProductExpand//TensorExpand2//TensorExpand//Expand)/.subPowerToDot;
+	Expandedtensor=(Expandedtensor/.subMatrixPowerToDot//TensorProductExpand//TensorExpand2//TensorExpand//Expand)/.subMatrixPowerToDot;
 
 	(*Expand any determinant*)
 	Expandedtensor = subExpandDetTensor[Expandedtensor,\[Delta]];
